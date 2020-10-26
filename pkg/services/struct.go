@@ -26,6 +26,8 @@ type Service interface {
 	GetRooms() []string
 	GetUsers() []users.User
 	GetRewards() []rewards.Reward
+
+	UpdateRoom(rooms.Room)
 }
 
 // NewService creates a new add service

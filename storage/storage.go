@@ -116,3 +116,12 @@ func (m *MemoryUserStorage) GetAll() []users.User {
 func (m *MemoryRewardStorage) GetAll() []rewards.Reward {
 	return m.rewards
 }
+
+// UpdateRoom updates a room in the slice
+func (m *MemoryRoomStorage) Update(roomUpdate rooms.Room) {
+	for index, room := range m.rooms {
+		if room.ID == roomUpdate.ID {
+			m.rooms[index] = roomUpdate
+		}
+	}
+}

@@ -34,7 +34,9 @@ func handleInput(text string, con net.Conn, in *bufio.Reader) {
 			fmt.Println("-> " + room)
 		}
 	case "3":
-		break
+		id := input.JoinRoom()
+		enc.Encode(id)
+		receiver(in)
 	case "4":
 		break
 	case "5":

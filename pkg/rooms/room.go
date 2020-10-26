@@ -28,4 +28,5 @@ type Storage interface {
 	Add(Room) error
 	Get(int) (Room, error)
 	GetAll() []string
+	Update(Room)
 }

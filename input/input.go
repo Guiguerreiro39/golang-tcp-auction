@@ -35,6 +35,25 @@ func Home() {
 	`)
 }
 
+// JoinRoom receives the id of the room to join
+func JoinRoom() int {
+	var id int
+	var input string
+	var err error
+
+	for {
+		fmt.Println("Room ID: ")
+		fmt.Scanln(&input)
+		id, err = strconv.Atoi(input)
+		if err == nil {
+			break
+		}
+		fmt.Println("That is not an int!")
+	}
+
+	return id
+}
+
 // AddRoom is the input text to add a new room
 func AddRoom() rooms.Room {
 	var input string

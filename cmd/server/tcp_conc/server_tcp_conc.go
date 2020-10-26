@@ -16,9 +16,14 @@ import (
 )
 
 var count int = 0
+var insideRoom = false
 var roomStorage rooms.Storage
 var rewardStorage rewards.Storage
 var userStorage users.Storage
+
+func handleRoom(text string, service services.Service, user int, con net.Conn) string {
+	return ""
+}
 
 func handleCommands(text string, service services.Service, user int, con net.Conn) string {
 	dec := gob.NewDecoder(con)
@@ -38,6 +43,19 @@ func handleCommands(text string, service services.Service, user int, con net.Con
 	case "2":
 		rooms := service.GetRooms()
 		enc.Encode(rooms)
+	case "3":
+		var id int
+		dec.Decode(&id)
+		room, err := service.GetRoomByID(id)
+		if err != nil {
+			return "Failed to enter room!"
+		}
+		room.Users = append(room.Users, user)
+		service.UpdateRoom(room)
+
+		fmt.Println(room)
+		insideRoom = true
+		return "You've just joined room - " + room.Name
 	}
 
 	return "Unknown command! " + text
@@ -57,6 +75,7 @@ func handleConnection(con net.Conn) {
 	defer handleClose(con)
 
 	for {
+		var response string
 		temp, err := in.ReadString('\n')
 		if err != nil {
 			fmt.Println(err)
@@ -68,7 +87,12 @@ func handleConnection(con net.Conn) {
 			break
 		}
 
-		response := handleCommands(text, service, user, con)
+		if !insideRoom {
+			response = handleCommands(text, service, user, con)
+		} else {
+			response = handleRoom(text, service, user, con)
+		}
+
 		con.Write([]byte(response + "\n"))
 	}
 }
