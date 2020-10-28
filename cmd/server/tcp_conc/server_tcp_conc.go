@@ -8,6 +8,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/Guiguerreiro39/go-auction-house/input"
 	"github.com/Guiguerreiro39/go-auction-house/pkg/rewards"
 	"github.com/Guiguerreiro39/go-auction-house/pkg/rooms"
 	"github.com/Guiguerreiro39/go-auction-house/pkg/services"
@@ -16,16 +17,70 @@ import (
 )
 
 var count int = 0
-var insideRoom = false
 var roomStorage rooms.Storage
 var rewardStorage rewards.Storage
 var userStorage users.Storage
 
-func handleRoom(text string, service services.Service, user int, con net.Conn) string {
-	return ""
+func handleRoom(text string, service services.Service, userID int, con net.Conn, insideRoom *int) string {
+	dec := gob.NewDecoder(con)
+	//enc := gob.NewEncoder(con)
+
+	room, err := service.GetRoomByID(*insideRoom)
+	if err != nil {
+		return "Error getting bid!"
+	}
+
+	switch text {
+	case "1":
+		var bid float64
+		dec.Decode(&bid)
+
+		if bid <= room.CurrentBid {
+			return "Bid is too low!"
+		}
+
+		room.CurrentBid = bid
+		room.CurrentWinner = userID
+		service.UpdateRoom(room)
+
+		return "Bid placed!"
+	case "2":
+		bid := fmt.Sprintf("%f", room.CurrentBid)
+		return "Current winning bid is " + bid
+	case "3":
+		winner, err := service.GetUserByID(room.CurrentWinner)
+		if err != nil {
+			if room.CurrentWinner == 0 {
+				return "There no bids yet!"
+			}
+			return "Error getting winner!"
+		}
+		return "Current winner is " + winner.Name
+	case "4":
+		reward, err := service.GetRewardByID(room.Reward)
+		if err != nil {
+			return "Error getting reward!"
+		}
+
+		return "This room reward is '" + reward.Name + "'"
+	case "5":
+		for i, u := range room.Users {
+			user, _ := service.GetUserByID(u)
+			if user.ID == userID {
+				room.Users = input.RemoveUser(room.Users, i)
+				break
+			}
+		}
+
+		service.UpdateRoom(room)
+		*insideRoom = 0
+		return "You've left the room"
+	}
+
+	return "Unknown command! " + text
 }
 
-func handleCommands(text string, service services.Service, user int, con net.Conn) string {
+func handleCommands(text string, service services.Service, userID int, con net.Conn, insideRoom *int) string {
 	dec := gob.NewDecoder(con)
 	enc := gob.NewEncoder(con)
 
@@ -34,8 +89,13 @@ func handleCommands(text string, service services.Service, user int, con net.Con
 		var room rooms.Room
 		dec.Decode(&room)
 
-		errRoom := service.AddRoom(room)
-		if errRoom != nil {
+		_, err := service.GetRewardByID(room.Reward)
+		if err != nil {
+			return "That reward doesn't exist!"
+		}
+
+		err = service.AddRoom(room)
+		if err != nil {
 			return "Failed to create room!"
 		}
 
@@ -50,19 +110,42 @@ func handleCommands(text string, service services.Service, user int, con net.Con
 		if err != nil {
 			return "Failed to enter room!"
 		}
-		room.Users = append(room.Users, user)
+		room.Users = append(room.Users, userID)
 		service.UpdateRoom(room)
 
-		fmt.Println(room)
-		insideRoom = true
+		*insideRoom = id
 		return "You've just joined room - " + room.Name
+	case "4":
+		user, _ := service.GetUserByID(userID)
+		var rewards []string
+		for _, r := range user.Rewards {
+			reward, _ := service.GetRewardByID(r)
+			rewards = append(rewards, reward.Name)
+		}
+		enc.Encode(rewards)
+	case "5":
+		var reward rewards.Reward
+		dec.Decode(&reward)
+
+		service.AddReward(reward)
+		return "Reward created!"
+	case "6":
+		users := service.GetUsers()
+		var names []string
+		for _, user := range users {
+			names = append(names, user.Name)
+		}
+		enc.Encode(names)
+	case "7":
+		user, _ := service.GetUserByID(userID)
+		cash := fmt.Sprintf("%f", user.Cash)
+		return "You currently have " + cash + string('$')
 	}
 
 	return "Unknown command! " + text
 }
 
 func handleClose(con net.Conn) {
-	count--
 	con.Close()
 	fmt.Println("Client connection closed!")
 }
@@ -70,30 +153,45 @@ func handleClose(con net.Conn) {
 func handleConnection(con net.Conn) {
 	service := services.NewService(&roomStorage, &rewardStorage, &userStorage)
 	in := bufio.NewReader(con)
-	user := count
+	var insideRoom int
 
 	defer handleClose(con)
+
+	username, err := in.ReadString('\n')
+	if err != nil {
+		return
+	}
+
+	userID := count
+	err = service.AddUser(users.User{
+		ID:   count,
+		Name: username,
+		Con:  con,
+		Cash: 1000.0,
+	})
+	if err != nil {
+		return
+	}
 
 	for {
 		var response string
 		temp, err := in.ReadString('\n')
 		if err != nil {
-			fmt.Println(err)
 			return
 		}
 
 		text := strings.TrimSpace(string(temp))
-		if text == "STOP" {
+		if text == "8" {
 			break
 		}
 
-		if !insideRoom {
-			response = handleCommands(text, service, user, con)
+		if insideRoom == 0 {
+			response = handleCommands(text, service, userID, con, &insideRoom)
 		} else {
-			response = handleRoom(text, service, user, con)
+			response = handleRoom(text, service, userID, con, &insideRoom)
 		}
 
-		con.Write([]byte(response + "\n"))
+		fmt.Fprintf(con, response+"\n")
 	}
 }
 
@@ -116,15 +214,16 @@ func main() {
 	}
 
 	defer listener.Close()
+	fmt.Println("Server start in port " + args[1])
 
 	for {
 		con, err := listener.Accept()
 		if err != nil {
-			fmt.Println(err)
 			return
 		}
 
 		fmt.Print("-> New Client!\n")
+
 		go handleConnection(con)
 		count++
 	}

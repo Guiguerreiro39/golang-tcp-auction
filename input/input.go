@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
+	"github.com/Guiguerreiro39/go-auction-house/pkg/rewards"
 	"github.com/Guiguerreiro39/go-auction-house/pkg/rooms"
 )
 
@@ -35,6 +36,18 @@ func Home() {
 	`)
 }
 
+// Room is a function that shows a room options for a client
+func Room() {
+	fmt.Println(`
+---- Room ----
+1. Place bid
+2. See current price
+3. Check current winner
+4. Check reward
+5. Quit
+	`)
+}
+
 // JoinRoom receives the id of the room to join
 func JoinRoom() int {
 	var id int
@@ -52,6 +65,44 @@ func JoinRoom() int {
 	}
 
 	return id
+}
+
+// Bid is a function that returns the bid of the client
+func Bid() float64 {
+	var input string
+	var bid float64
+	var err error
+
+	for {
+		fmt.Println("Bid: ")
+		fmt.Scanln(&input)
+		bid, err = strconv.ParseFloat(input, 64)
+		if err == nil {
+			break
+		}
+		fmt.Println("That is not a float64!")
+	}
+
+	return bid
+
+}
+
+// RemoveUser removes a user from a room using its index
+func RemoveUser(s []int, i int) []int {
+	s[len(s)-1], s[i] = s[i], s[len(s)-1]
+	return s[:len(s)-1]
+}
+
+// AddReward is the input text to add a new reward
+func AddReward() rewards.Reward {
+	var name string
+	var reward rewards.Reward
+
+	fmt.Println("Reward name: ")
+	fmt.Scanln(&name)
+	reward.Name = name
+
+	return reward
 }
 
 // AddRoom is the input text to add a new room

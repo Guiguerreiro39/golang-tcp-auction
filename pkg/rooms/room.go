@@ -11,7 +11,7 @@ type Room struct {
 	Users         []int
 	Owner         int
 	Min           float64
-	CurrentBid    int
+	CurrentBid    float64
 	CurrentWinner int
 	Reward        int
 	Active        bool

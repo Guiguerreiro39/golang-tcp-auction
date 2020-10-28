@@ -7,13 +7,11 @@ import (
 
 // User is the structure of an user
 type User struct {
-	ID       int
-	Name     string
-	Password string
-	Email    string
-	Rewards  []int
-	Con      net.Conn
-	Cash     float64
+	ID      int
+	Name    string
+	Rewards []int
+	Con     net.Conn
+	Cash    float64
 }
 
 // ErrDuplicate creates a duplicate error

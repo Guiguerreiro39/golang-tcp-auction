@@ -11,14 +11,39 @@ import (
 	"github.com/Guiguerreiro39/go-auction-house/input"
 )
 
-func receiver(in *bufio.Reader) {
+var insideRoom = false
+
+func receiver(con net.Conn) {
 	// Listen to the server response
+	in := bufio.NewReader(con)
+
 	message, _ := in.ReadString('\n')
 	fmt.Print("->: " + message)
 }
 
-func handleInput(text string, con net.Conn, in *bufio.Reader) {
-	fmt.Fprintf(con, text+"\n")
+func handleRoom(text string, con net.Conn) {
+	enc := gob.NewEncoder(con)
+	//dec := gob.NewDecoder(con)
+
+	switch text {
+	case "1":
+		bid := input.Bid()
+		enc.Encode(bid)
+		receiver(con)
+	case "2":
+		receiver(con)
+	case "3":
+		receiver(con)
+	case "4":
+		receiver(con)
+	case "5":
+		receiver(con)
+		insideRoom = false
+	}
+
+}
+
+func handleInput(text string, con net.Conn) {
 	enc := gob.NewEncoder(con)
 	dec := gob.NewDecoder(con)
 
@@ -26,7 +51,7 @@ func handleInput(text string, con net.Conn, in *bufio.Reader) {
 	case "1":
 		room := input.AddRoom()
 		enc.Encode(room)
-		receiver(in)
+		receiver(con)
 	case "2":
 		var allRooms []string
 		dec.Decode(&allRooms)
@@ -36,15 +61,26 @@ func handleInput(text string, con net.Conn, in *bufio.Reader) {
 	case "3":
 		id := input.JoinRoom()
 		enc.Encode(id)
-		receiver(in)
+		receiver(con)
+		insideRoom = true
 	case "4":
-		break
+		var rewards []string
+		dec.Decode(&rewards)
+		for _, reward := range rewards {
+			fmt.Println("-> " + reward)
+		}
 	case "5":
-		break
+		reward := input.AddReward()
+		enc.Encode(reward)
+		receiver(con)
 	case "6":
-		break
+		var users []string
+		dec.Decode(&users)
+		for _, user := range users {
+			fmt.Println("-> " + user)
+		}
 	case "7":
-		break
+		receiver(con)
 	}
 }
 
@@ -65,22 +101,43 @@ func main() {
 	}
 
 	out := bufio.NewReader(os.Stdin)
-	in := bufio.NewReader(con)
 
 	input.Welcome()
 
-	for {
-		input.Home()
-		fmt.Print(">> ")
-		temp, _ := out.ReadString('\n')
+	fmt.Print(">> Username: ")
+	username, _ := out.ReadString('\n')
+	username = strings.TrimSpace(string(username))
+	fmt.Fprintf(con, username+"\n")
 
-		text := strings.TrimSpace(string(temp))
-		if text == "8" {
-			fmt.Println("TCP client exiting...")
-			return
+	for {
+		if !insideRoom {
+			input.Home()
+		} else {
+			input.Room()
 		}
 
-		handleInput(text, con, in)
+		var text string
+		for {
+			fmt.Print(">> ")
+			temp, _ := out.ReadString('\n')
+
+			text = strings.TrimSpace(string(temp))
+			if text == "8" {
+				fmt.Println("TCP client exiting...")
+				return
+			}
+			if text != "" {
+				break
+			}
+		}
+
+		if !insideRoom {
+			fmt.Fprintf(con, text+"\n")
+			handleInput(text, con)
+		} else {
+			fmt.Fprintf(con, text+"\n")
+			handleRoom(text, con)
+		}
 	}
 
 }
