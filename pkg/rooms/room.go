@@ -25,8 +25,8 @@ var ErrNotFound = errors.New("Room was not found")
 
 // Storage is an interface with the methods to store and retrieve a room
 type Storage interface {
-	Add(Room) error
+	Add(Room) (int, error)
 	Get(int) (Room, error)
-	GetAll() []string
+	GetAll() []Room
 	Update(Room)
 }

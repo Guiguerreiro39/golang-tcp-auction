@@ -10,7 +10,7 @@ func (s service) GetRoomByID(id int) (rooms.Room, error) {
 	return s.room.Get(id)
 }
 
-func (s service) GetRooms() []string {
+func (s service) GetRooms() []rooms.Room {
 	return s.room.GetAll()
 }
 

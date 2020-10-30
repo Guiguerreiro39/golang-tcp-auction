@@ -14,7 +14,8 @@ var ErrNotFound = errors.New("Reward was not found")
 
 // Storage is an interface with the methods to store and retrieve a reward
 type Storage interface {
-	Add(Reward) error
+	Add(Reward) int
 	Get(int) (Reward, error)
 	GetAll() []Reward
+	Update(Reward)
 }

@@ -1,7 +1,9 @@
 package input
 
 import (
+	"bufio"
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/Guiguerreiro39/go-auction-house/pkg/rewards"
@@ -36,12 +38,23 @@ func Home() {
 	`)
 }
 
-// Room is a function that shows a room options for a client
-func Room() {
+// RoomOwner is a function that shows a room options for the owner of the room
+func RoomOwner() {
+	fmt.Println(`
+---- Room ----
+1. Check room users
+2. See current bid
+3. Check current winner
+4. End auction
+	`)
+}
+
+// RoomClient is a function that shows a room options for a client
+func RoomClient() {
 	fmt.Println(`
 ---- Room ----
 1. Place bid
-2. See current price
+2. See current highest bid
 3. Check current winner
 4. Check reward
 5. Quit
@@ -53,10 +66,12 @@ func JoinRoom() int {
 	var id int
 	var input string
 	var err error
+	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
 		fmt.Println("Room ID: ")
-		fmt.Scanln(&input)
+		scanner.Scan()
+		input = scanner.Text()
 		id, err = strconv.Atoi(input)
 		if err == nil {
 			break
@@ -72,10 +87,12 @@ func Bid() float64 {
 	var input string
 	var bid float64
 	var err error
+	scanner := bufio.NewScanner(os.Stdin)
 
 	for {
 		fmt.Println("Bid: ")
-		fmt.Scanln(&input)
+		scanner.Scan()
+		input = scanner.Text()
 		bid, err = strconv.ParseFloat(input, 64)
 		if err == nil {
 			break
@@ -87,20 +104,14 @@ func Bid() float64 {
 
 }
 
-// RemoveUser removes a user from a room using its index
-func RemoveUser(s []int, i int) []int {
-	s[len(s)-1], s[i] = s[i], s[len(s)-1]
-	return s[:len(s)-1]
-}
-
 // AddReward is the input text to add a new reward
 func AddReward() rewards.Reward {
-	var name string
 	var reward rewards.Reward
+	scanner := bufio.NewScanner(os.Stdin)
 
 	fmt.Println("Reward name: ")
-	fmt.Scanln(&name)
-	reward.Name = name
+	scanner.Scan()
+	reward.Name = scanner.Text()
 
 	return reward
 }
@@ -110,14 +121,16 @@ func AddRoom() rooms.Room {
 	var input string
 	var room rooms.Room
 	var err error
+	scanner := bufio.NewScanner(os.Stdin)
 
 	fmt.Println("Room name: ")
-	fmt.Scanln(&input)
-	room.Name = input
+	scanner.Scan()
+	room.Name = scanner.Text()
 
 	for {
 		fmt.Println("Minimum price: ")
-		fmt.Scanln(&input)
+		scanner.Scan()
+		input = scanner.Text()
 		room.Min, err = strconv.ParseFloat(input, 64)
 		if err == nil {
 			break
@@ -127,7 +140,8 @@ func AddRoom() rooms.Room {
 
 	for {
 		fmt.Println("Reward id: ")
-		fmt.Scanln(&input)
+		scanner.Scan()
+		input = scanner.Text()
 		room.Reward, err = strconv.Atoi(input)
 		if err == nil {
 			break

@@ -22,39 +22,34 @@ type MemoryUserStorage struct {
 }
 
 // Add is a method to add a new room
-func (m *MemoryRoomStorage) Add(room rooms.Room) error {
+func (m *MemoryRoomStorage) Add(room rooms.Room) (int, error) {
 	for _, r := range m.rooms {
 		if room.Name == r.Name {
-			return rooms.ErrDuplicate
+			return 0, rooms.ErrDuplicate
 		}
 	}
 
 	room.ID = len(m.rooms) + 1
 	m.rooms = append(m.rooms, room)
 
-	return nil
+	return room.ID, nil
 }
 
 // Add is a method to add a new user
-func (m *MemoryUserStorage) Add(user users.User) error {
-	for _, u := range m.users {
-		if user.Name == u.Name {
-			return users.ErrDuplicate
-		}
-	}
-
+func (m *MemoryUserStorage) Add(user users.User) int {
 	user.ID = len(m.users) + 1
+	user.Cash = 1000.0
 	m.users = append(m.users, user)
 
-	return nil
+	return user.ID
 }
 
 // Add is a method to add a new reward
-func (m *MemoryRewardStorage) Add(reward rewards.Reward) error {
+func (m *MemoryRewardStorage) Add(reward rewards.Reward) int {
 	reward.ID = len(m.rewards) + 1
 	m.rewards = append(m.rewards, reward)
 
-	return nil
+	return reward.ID
 }
 
 // Get retrieves the room of the given id
@@ -97,14 +92,8 @@ func (m *MemoryRewardStorage) Get(id int) (rewards.Reward, error) {
 }
 
 // GetAll retrieves all rooms
-func (m *MemoryRoomStorage) GetAll() []string {
-	var allRooms []string
-
-	for _, room := range m.rooms {
-		allRooms = append(allRooms, room.Name)
-	}
-
-	return allRooms
+func (m *MemoryRoomStorage) GetAll() []rooms.Room {
+	return m.rooms
 }
 
 // GetAll retrieves all users
@@ -117,11 +106,29 @@ func (m *MemoryRewardStorage) GetAll() []rewards.Reward {
 	return m.rewards
 }
 
-// UpdateRoom updates a room in the slice
-func (m *MemoryRoomStorage) Update(roomUpdate rooms.Room) {
-	for index, room := range m.rooms {
-		if room.ID == roomUpdate.ID {
-			m.rooms[index] = roomUpdate
+// Update updates a room in the slice
+func (m *MemoryRoomStorage) Update(room rooms.Room) {
+	for index, r := range m.rooms {
+		if r.ID == room.ID {
+			m.rooms[index] = room
+		}
+	}
+}
+
+// Update updates a room in the slice
+func (m *MemoryUserStorage) Update(user users.User) {
+	for index, u := range m.users {
+		if u.ID == user.ID {
+			m.users[index] = user
+		}
+	}
+}
+
+// Update updates a reward in the slice
+func (m *MemoryRewardStorage) Update(reward rewards.Reward) {
+	for index, r := range m.rewards {
+		if r.ID == reward.ID {
+			m.rewards[index] = reward
 		}
 	}
 }

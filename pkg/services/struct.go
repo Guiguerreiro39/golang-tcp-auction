@@ -15,19 +15,21 @@ type service struct {
 
 // Service is an interface for the add service
 type Service interface {
-	AddRoom(rooms.Room) error
-	AddUser(users.User) error
-	AddReward(rewards.Reward) error
+	AddRoom(rooms.Room) (int, error)
+	AddUser(users.User) int
+	AddReward(rewards.Reward) int
 
 	GetRoomByID(int) (rooms.Room, error)
 	GetUserByID(int) (users.User, error)
 	GetRewardByID(int) (rewards.Reward, error)
 
-	GetRooms() []string
+	GetRooms() []rooms.Room
 	GetUsers() []users.User
 	GetRewards() []rewards.Reward
 
 	UpdateRoom(rooms.Room)
+	UpdateUser(users.User)
+	UpdateReward(rewards.Reward)
 }
 
 // NewService creates a new add service
